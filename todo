@@ -1,0 +1,30 @@
+
+
+-- Seeding
+	-- Uncompressed		-V
+	-- Compressed		-V
+	
+-- Filtering
+	-- Uncompressed		-V
+	-- Compressed		-X
+	
+-- Alignment
+	-- Uncompressed		-X
+	-- Compressed		-X
+	
+-- Multithreading
+	-- Uncompressed		-V
+	-- Compressed 		-V
+	
+-- GPU Acceleration
+	-- Filtering U		-X
+	-- Filtering C		-X
+	-- Alignemnt U		-X
+	-- Alignment C		-X
+	
+-- FPGA Acceleration
+	-- Filtering U		-X
+	-- Filtering C		-X
+	-- Alignemnt U		-X
+	-- Alignment C		-X
+
