@@ -1,0 +1,16 @@
+{
+    "files.associations": {
+        "chrono": "c",
+        "cmath": "c",
+        "sched.h": "c",
+        "array": "c",
+        "deque": "c",
+        "forward_list": "c",
+        "list": "c",
+        "string": "c",
+        "unordered_map": "c",
+        "vector": "c",
+        "string_view": "c",
+        "initializer_list": "c"
+    }
+}
