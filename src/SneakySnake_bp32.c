@@ -62,7 +62,7 @@ uint64_t baseExtract(uint64_t word, int i){
 }
 
 
-int SneakySnake_bp32(int ReadLength, uint64_t RefSeq, uint64_t ReadSeq, int EditThreshold, int KmerSize, int DebugMode, int IterationNo)
+int SneakySnake_bp32(int ReadLength, bp32_t * RefSeq, bp32_t * ReadSeq, int EditThreshold, int KmerSize, int DebugMode, int IterationNo)
 {
 	int Accepted=1;
 	int n;
@@ -148,147 +148,181 @@ int SneakySnake_bp32(int ReadLength, uint64_t RefSeq, uint64_t ReadSeq, int Edit
 		
 				// Main Diagonal
 				////////////////////////////////////////////
-				for (n = (index); n < (KmerEnd) ; n++) {
+					int wordIndex = 0;
 
+						for (n = (index); n < (KmerEnd) ; n++) {
 
-			/* 	for(fino a MAX_READ_CHUNK_SIZE/32){
-					for(fino a 32){
-						uint64_t extractedBaseRef = baseExtract(word * i, n);
-						uint64_t extractedBaseRead = baseExtract(word * i, n);
-					}
-				} */
+							register uint64_t wordRef, wordRead;
+							
+							if(n/32 != wordIndex ){
+								wordIndex = n/32;
+								/* wordRef = RefSeq >> 32 * wordIndex;
+								wordRead = ReadSeq >> 32 * wordIndex;	 */
 
-					uint64_t extractedBaseRef = baseExtract(RefSeq, n);
-					uint64_t extractedBaseRead = baseExtract(ReadSeq, n);
-					printf("ExtractedBaseRef %ld\n", extractedBaseRef);
-					printf("ExtractedBaseRead %ld\n", extractedBaseRead);
-
-
-
-
-					if (extractedBaseRead != extractedBaseRef) {
-						goto EXIT1;
-					}
-					else if(extractedBaseRead == extractedBaseRef) {
-						GlobalCount=GlobalCount+1;
-					}
-				}
-				EXIT1:
-				if (GlobalCount ==(KmerEnd-KmerStart))
-					goto LOOP;
-				
-				////////////////////////////////////////////
-				//  Upper & Lower Diagonals
-				////////////////////////////////////////////
-				for (e = 1; e <= EditThreshold; e++) {
-					count=0;
-					///////////////////////////////////////////////////
-					//  Shift Read to Right-hand side (Upper Diagonals: Deletion)
-					for (n = (index); n < (KmerEnd) ; n++) {
-
-						uint64_t extractedBaseRef = baseExtract(RefSeq, n);
-						uint64_t extractedBaseRead = baseExtract(ReadSeq, n-e);
-
-						if (n<e) 
-							goto EXIT2; // fill the shifted chars with Ones
-						else if (extractedBaseRead !=extractedBaseRef)
-							goto EXIT2;
-						else if (extractedBaseRead == extractedBaseRef) {
-							count=count+1;
-						}
-					}
-					EXIT2:
-					if (count>GlobalCount) {
-						GlobalCount = count;
-					}
-					if (count ==(KmerEnd-KmerStart))
-						goto LOOP;
-					
-					count=0;
-					///////////////////////////////////////////////////
-					//  Shift Read to Left-hand side (Lower Diagonals: Insertion)
-					for (n = (index); n < (KmerEnd) ; n++) {
-						uint64_t extractedBaseRef = baseExtract(RefSeq, n);
-						uint64_t extractedBaseRead = baseExtract(ReadSeq, n+e);
-
-						if (n>ReadLength-e-1) 
-							goto EXIT3;
-						else if (extractedBaseRead != extractedBaseRef)
-							goto EXIT3;
-						else if (extractedBaseRead == extractedBaseRef) {
-							count=count+1;
-						}					
-					}
-					EXIT3:
-					if (count>GlobalCount) {
-						GlobalCount = count;
-					}
-					if (count ==(KmerEnd-KmerStart))
-						goto LOOP;
-				}
-					
-				//if (DebugMode==1) 
-					//printf("GlobalCount: %d, index: %d \n", GlobalCount,index);
-				index = index+GlobalCount; // we add one here to skip the error that causes the segmentation
-				if (index<(KmerEnd)) {
-					Edits=Edits+1;
-					index=index+1;
-				}
-				if (roundsNo>IterationNo)
-					goto LOOP;
-				roundsNo=roundsNo+1;
-				if (Edits > EditThreshold)
-					return 0;
-				
-				////////////////////////////////////////////
-				// END of Building the Hamming masks
-				/////////////////////////////////////////////////
-				/////////////////////////////////////////////////
-				//// if not sure about the number of matches, try finding the best PATH within a Kmer
-
-			}
-			////////////////////////////////////////////////
-			////////////////////////////////////////////////
-			LOOP:
-			/* Backtracking Step
-			PrvSource    Source      # Edits
-			2----------> 2-1-0-3-4   0-1-2-3-4 
-			1----------> 2-1-0-3-4   1-0-1-2-3 
-			0----------> 2-1-0-3-4   2-1-0-1-2   
-			3----------> 2-1-0-3-4   3-2-1-0-1 
-			4----------> 2-1-0-3-4   4-3-2-1-0 
-			
-			if (PreviousSource==0) {
-				if (Source>EditThreshold) 
-					Edits=abs(Source-EditThreshold);
-				else 
-					Edits=Source;
-			}
-			else if (PreviousSource<=EditThreshold && Source<=EditThreshold)
-				Edits=abs(Source-PreviousSource);
-			else if (PreviousSource<=EditThreshold && Source>EditThreshold)
-				Edits= PreviousSource+ abs(Source-EditThreshold);
-			else if (PreviousSource>EditThreshold && Source<=EditThreshold)
-				Edits= Source + abs(PreviousSource-EditThreshold);
-			else if (PreviousSource>EditThreshold && Source>EditThreshold)
-				Edits=abs(Source-PreviousSource);
-			GlobalCount=(Edits>(KmerSize-GlobalCount))?(KmerSize-abs(Edits-(KmerSize-GlobalCount))):GlobalCount;
-			*/
-			/////////////////////////////////////////////////
-			
-			//GlobalCount=GlobalCount +Edits;
-			/*if (DebugMode==1) {
-				printf("Global Count: %d, Edits: %d\n",GlobalCount,Edits);
-			}*/
-			if (Edits > EditThreshold)
-				return 0;	
-		}
-	}
-	////////////////////////////////////////////////
-	////////////////////////////////////////////////
-	////////////////////////////////////////////////
-	////////////////////////////////////////////////
-	////////////////////////////////////////////////
+								wordRef = RefSeq[wordIndex];
+								wordRead = ReadSeq[wordIndex];	
+							}
+							
+							uint64_t extractedBaseRef = baseExtract(wordRef, n%32);
+							uint64_t extractedBaseRead = baseExtract(wordRead, n%32);
 	
-	return Accepted;
-}
+							if (extractedBaseRead != extractedBaseRef) {
+								goto EXIT1;
+							}
+							else if(extractedBaseRead == extractedBaseRef) {
+								GlobalCount=GlobalCount+1;
+							}
+						}
+
+						EXIT1:
+						if (GlobalCount ==(KmerEnd-KmerStart))
+							goto LOOP;
+					
+				
+					
+					
+					////////////////////////////////////////////
+					//  Upper & Lower Diagonals
+					////////////////////////////////////////////
+
+					wordIndex = 0;
+
+					for (e = 1; e <= EditThreshold; e++) {
+						count=0;
+						///////////////////////////////////////////////////
+						//  Shift Read to Right-hand side (Upper Diagonals: Deletion)
+						for (n = (index); n < (KmerEnd) ; n++) {
+
+
+							register uint64_t wordRef, wordRead;
+							
+							if(n/32 != wordIndex ){
+								wordIndex = n/32;
+								/* wordRef = RefSeq >> 32 * wordIndex;
+								wordRead = ReadSeq >> 32 * wordIndex;	 */
+								wordRef = RefSeq[wordIndex];
+								wordRead = ReadSeq[wordIndex];	
+							}
+							
+							uint64_t extractedBaseRef = baseExtract(wordRef, n%32);
+							uint64_t extractedBaseRead = baseExtract(wordRead, (n-e)%32);
+
+
+							if (n<e) 
+								goto EXIT2; // fill the shifted chars with Ones
+							else if (extractedBaseRead !=extractedBaseRef)
+								goto EXIT2;
+							else if (extractedBaseRead == extractedBaseRef) {
+								count=count+1;
+							}
+						}
+						EXIT2:
+						if (count>GlobalCount) {
+							GlobalCount = count;
+						}
+						if (count ==(KmerEnd-KmerStart))
+							goto LOOP;
+						
+						count=0;
+						///////////////////////////////////////////////////
+						//  Shift Read to Left-hand side (Lower Diagonals: Insertion)
+
+
+						wordIndex = 0;
+						for (n = (index); n < (KmerEnd) ; n++) {
+							
+							register uint64_t wordRef, wordRead;
+							
+							if(n/32 != wordIndex ){
+								wordIndex = n/32;
+								/* wordRef = RefSeq >> 32 * wordIndex;
+								wordRead = ReadSeq >> 32 * wordIndex;	 */
+								wordRef = RefSeq[wordIndex];
+								wordRead = ReadSeq[wordIndex];	
+							}
+							
+							uint64_t extractedBaseRef = baseExtract(wordRef, n%32);
+							uint64_t extractedBaseRead = baseExtract(wordRead, (n+e)%32);
+
+
+							if (n>ReadLength-e-1) 
+								goto EXIT3;
+							else if (extractedBaseRead != extractedBaseRef)
+								goto EXIT3;
+							else if (extractedBaseRead == extractedBaseRef) {
+								count=count+1;
+							}					
+						}
+						EXIT3:
+						if (count>GlobalCount) {
+							GlobalCount = count;
+						}
+						if (count ==(KmerEnd-KmerStart))
+							goto LOOP;
+					}
+						
+					//if (DebugMode==1) 
+						//printf("GlobalCount: %d, index: %d \n", GlobalCount,index);
+					index = index+GlobalCount; // we add one here to skip the error that causes the segmentation
+					if (index<(KmerEnd)) {
+						Edits=Edits+1;
+						index=index+1;
+					}
+					if (roundsNo>IterationNo)
+						goto LOOP;
+					roundsNo=roundsNo+1;
+					if (Edits > EditThreshold)
+						return 0;
+					
+					////////////////////////////////////////////
+					// END of Building the Hamming masks
+					/////////////////////////////////////////////////
+					/////////////////////////////////////////////////
+					//// if not sure about the number of matches, try finding the best PATH within a Kmer
+
+				}
+				////////////////////////////////////////////////
+				////////////////////////////////////////////////
+				LOOP:
+				/* Backtracking Step
+				PrvSource    Source      # Edits
+				2----------> 2-1-0-3-4   0-1-2-3-4 
+				1----------> 2-1-0-3-4   1-0-1-2-3 
+				0----------> 2-1-0-3-4   2-1-0-1-2   
+				3----------> 2-1-0-3-4   3-2-1-0-1 
+				4----------> 2-1-0-3-4   4-3-2-1-0 
+				
+				if (PreviousSource==0) {
+					if (Source>EditThreshold) 
+						Edits=abs(Source-EditThreshold);
+					else 
+						Edits=Source;
+				}
+				else if (PreviousSource<=EditThreshold && Source<=EditThreshold)
+					Edits=abs(Source-PreviousSource);
+				else if (PreviousSource<=EditThreshold && Source>EditThreshold)
+					Edits= PreviousSource+ abs(Source-EditThreshold);
+				else if (PreviousSource>EditThreshold && Source<=EditThreshold)
+					Edits= Source + abs(PreviousSource-EditThreshold);
+				else if (PreviousSource>EditThreshold && Source>EditThreshold)
+					Edits=abs(Source-PreviousSource);
+				GlobalCount=(Edits>(KmerSize-GlobalCount))?(KmerSize-abs(Edits-(KmerSize-GlobalCount))):GlobalCount;
+				*/
+				/////////////////////////////////////////////////
+				
+				//GlobalCount=GlobalCount +Edits;
+				/*if (DebugMode==1) {
+					printf("Global Count: %d, Edits: %d\n",GlobalCount,Edits);
+				}*/
+				if (Edits > EditThreshold)
+					return 0;	
+				}
+		} 
+		////////////////////////////////////////////////
+		////////////////////////////////////////////////
+		////////////////////////////////////////////////
+		////////////////////////////////////////////////
+		////////////////////////////////////////////////
+		
+		return Accepted;
+	}

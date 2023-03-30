@@ -26,12 +26,8 @@
 
 	It is also possible to Insert in any position, copy the vector etc. For more details look at cvector.h
 */
-
-#ifdef MODE_COMPRESSED
-	typedef uint64_t bp32_t;	// {A,C,G,T} = {00,01,10,11}, 32 bases per word
-#else
-	typedef char bp_t;
-#endif
+typedef uint64_t bp32_t;
+typedef char bp_t;
 
 
 /* Hashmizer: it is a minimizer structure. See minimap2 paper for formal modeling and definition */

@@ -47,10 +47,10 @@
 #include "types.h"
 
 /* Function Declarations */
+
 extern int SneakySnake(int ReadLength, char * RefSeq, char * ReadSeq, int ErrorThreshold, int KmerSize, int DebugMode, int IterationNo);
+extern int SneakySnake_bp32(int ReadLength, bp32_t * RefSeq, bp32_t * ReadSeq, int ErrorThreshold, int KmerSize, int DebugMode, int IterationNo);
 
-
-extern int SneakySnake_bp32(int ReadLength, uint64_t RefSeq, uint64_t ReadSeq, int ErrorThreshold, int KmerSize, int DebugMode, int IterationNo);
 uint64_t baseExtract(uint64_t word, int i );
 
 #endif
