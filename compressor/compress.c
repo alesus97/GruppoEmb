@@ -9,8 +9,10 @@ void compressReferenceGenome(FILE * genFile, FILE * cmpGenFile){
     uint64_t genome_start;
     uint64_t sequence_size = 0;
 
+
+
     while( fgetc(genFile) != '\n' ); 	            //Skip first line: it only contains metadata
-    genome_start = ftell(genFile);                  //Record genome starting point
+     genome_start = ftell(genFile);                  //Record genome starting point
     while( fgetc(genFile)!= EOF ) sequence_size++;    //Compute Genome Size
     fseek(genFile,genome_start,SEEK_SET);
 
@@ -35,7 +37,7 @@ void compressReferenceGenome(FILE * genFile, FILE * cmpGenFile){
             cnt = 0;
         }
 
-    }
+    } 
 }
 
 void compressReads(FILE * readFile, FILE * cmpReadFile){

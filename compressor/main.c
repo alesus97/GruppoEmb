@@ -15,12 +15,12 @@ int main( int argc, char *argv[] ){
     char genomePath[1024];
     char readsPath[1024];
 
-    if( argc == 1 ){
+     if( argc == 1 ){
         printf("\nNo arguments provided\n\t");
         printf("Use -r 'path/to/reads' to load the reads fasta file\n\t");
         printf("Use -g 'path/to/genome' to load the genome fasta file\n\t");
         printf("Use -rg 'path/to/reads' 'path/to/genome' to load both reads and genome fasta files\n\n");
-    } 
+    }  
     else if( argc == 3 | argc == 4){
         if(!strcmp("-r",argv[1])){
             strcpy(readsPath,argv[2]);
@@ -47,25 +47,25 @@ int main( int argc, char *argv[] ){
 
         if(flag == 2 | flag == 3){
 
-            //genFile = fopen("../data/genomes/salmonellaEnterica.fasta", "r");
-            genFile = readFile = fopen(genomePath, "r");
-            if(readFile == NULL){ printf("[Main] Error : genome file to be compressed (.FASTA) not found\n"); return -1; }
+           // genFile = readFile = fopen("../data/genomes/salmonellaEntericaShrtN.fasta", "r");
+            genFile = fopen(genomePath, "r");
+            if(genFile == NULL){ printf("[Main] Error : genome file to be compressed (.FASTA) not found\n"); return -1; }
             cmpGenFile = fopen("compressedGenome.bp32","wb+");
 
             printf("Compressing Reference Genome :: FASTA 2 BP32\t");
-            compressReferenceGenome(genFile, cmpReadFile);
+            compressReferenceGenome(genFile, cmpGenFile);
             printf("Done\n");
 
             fclose(genFile);
-            fclose(cmpGenFile);
+            fclose(cmpGenFile); 
 
         }
 
         // Build bp32 file for reads
 
-        if(flag == 1 | flag == 3){
+         if(flag == 1 | flag == 3){
 
-            //readFile  = fopen("../data/reads/salmonellaEntericaReads.fasta", "r");
+            //readFile  = fopen("../data/reads/salmonellaEntericaReadsShrt.fasta", "r");
             readFile = fopen(readsPath, "r");
             if(readFile == NULL){ printf("[Main] Error : reads file to be compressed (.FASTA) not found\n"); return -1; }
             cmpReadFile = fopen("compressedReads.bp32","wb+");
@@ -77,15 +77,15 @@ int main( int argc, char *argv[] ){
             fclose(readFile);  
             fclose(cmpReadFile);
 
-        }
+        } 
 
     }
-    else{
+     else{
         printf("\nWrong format\n\t");
         printf("Use -r 'path/to/reads' to load the reads fasta file\n\t");
         printf("Use -g 'path/to/genome' to load the genome fasta file\n\t");
         printf("Use -rg 'path/to/reads' 'path/to/genome' to load both reads and genome fasta files\n\n");
-    }
+    } 
 
     return 0;
 }

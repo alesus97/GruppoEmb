@@ -180,6 +180,7 @@ void reverseComplement_bp32( bp32_t * seq, const uint32_t seq_size ){
 	bp32_t word_a;
 	bp32_t word_b;
 
+	
 	word_num = ceil(seq_size/32);
 
 	for( int j = 0; j < word_num/2; j++ ){
@@ -203,11 +204,11 @@ void reverseComplement_bp32( bp32_t * seq, const uint32_t seq_size ){
     }
 
 	//If word_num is odd reverse and complement word number word_num/2+1
-	if(word_num % 2 != 0){
+ 	if(word_num % 2 != 0){
 		seqrev_a = 0;
 		for( int k = 0; k < 32; k++ ) seqrev_a |= (((seq[word_num/2+1] >> 2*k) & 0x3) << (62-2*k));
 		seq[word_num/2+1] = 0xffffffffffffffff ^ seqrev_a;
-	}
+	} 
 
 }
 
