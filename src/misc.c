@@ -179,36 +179,57 @@ void reverseComplement_bp32( bp32_t * seq, const uint32_t seq_size ){
 	bp32_t seqrev_b = 0;
 	bp32_t word_a;
 	bp32_t word_b;
+	uint64_t mask_b;
+	uint8_t l = seq_size % 32;
+	uint8_t h = 32 - l;
 
-	
-	word_num = ceil(seq_size/32);
+	word_num = ceil((float)seq_size/32);
 
 	for( int j = 0; j < word_num/2; j++ ){
 
 		//Select Reverse words
-        word_a = seq[j];
-        word_b = seq[word_num - j - 1];
+		word_a = seq[j];
+		word_b = seq[word_num - j - 1];
 
-        //Reverse 
-        seqrev_a = 0;
+		//Reverse
+		seqrev_a = 0;
 		seqrev_b = 0;
-        for( int k = 0; k < 32; k++ ){
+
+		for( int k = 0; k < 32; k++ ){
 			seqrev_a |= (((word_a >> 2*k) & 0x3) << (62-2*k));
 			seqrev_b |= (((word_b >> 2*k) & 0x3) << (62-2*k));
 		}
-            
-		//Complement and reversed assign
-        seq[j] = 0xffffffffffffffff ^ seqrev_b;
-		seq[word_num - j - 1] = 0xffffffffffffffff ^ seqrev_a;
-                 
-    }
+
+		//Complement
+		mask_b = pow(2,2*l) - 1;
+		seqrev_a ^= 0xffffffffffffffff ;
+		seqrev_b = (!j && l) ? (mask_b)^(seqrev_b >> 2*h) : 0xffffffffffffffff ^seqrev_b;
+
+		//Reverse Assign
+		seq[j] = seqrev_b;
+		seq[word_num - j - 1] = seqrev_a;
+	}
+
 
 	//If word_num is odd reverse and complement word number word_num/2+1
- 	if(word_num % 2 != 0){
+
+	if(word_num % 2 != 0){
 		seqrev_a = 0;
-		for( int k = 0; k < 32; k++ ) seqrev_a |= (((seq[word_num/2+1] >> 2*k) & 0x3) << (62-2*k));
-		seq[word_num/2+1] = 0xffffffffffffffff ^ seqrev_a;
-	} 
+		for( int k = 0; k < 32; k++ ) seqrev_a |= (((seq[word_num/2] >> 2*k) & 0x3) << (62-2*k));
+		seq[word_num/2] = 0xffffffffffffffff ^ seqrev_a;
+	}
+
+
+	//If seq_size is not a multiple of 32, we must perform a final shift
+
+	if(l){
+		seq[0] |= (seq[1] << 2*l);
+		for(int i = 1; i < word_num-1; i++){
+			seq[i] = (seq[i] >> 2*h) | (seq[i+1] << 2*l);
+		}
+		seq[word_num-1] = (seq[word_num - 1] >> 2*h);
+	}
+
 
 }
 

@@ -216,7 +216,7 @@ int chunkFilter(struct seqfile_t *RF, struct seqfile_t *TF, uint32_t chunk_num, 
 				// If strandQ is Negative
 				if(minmatch.strandQ == 1){
 
-					if (i == 0){
+					if (i == 0 && (RF->seqlen % chunk_size) != 0){
 						last_chunk_size = (RF->seqlen) % chunk_size;
 
 					}else{
@@ -224,25 +224,27 @@ int chunkFilter(struct seqfile_t *RF, struct seqfile_t *TF, uint32_t chunk_num, 
 					}
 
 					getReadChunk(RF, temp_chunk, (chunk_size * (chunk_num - 1 - i)), last_chunk_size);
+					//printSequence(chunkQ, 0, last_chunk_size, 1);
 					reverseComplement(temp_chunk, chunkQ, last_chunk_size);
 
 				} // If strandQ is Positive
 				else if(minmatch.strandQ == 0){
 
-					if (i == (chunk_num - 1)){
+					if (i == (chunk_num - 1) && (RF->seqlen % chunk_size) != 0){
 						last_chunk_size = (RF->seqlen) % chunk_size;
 					}else{
 						last_chunk_size = chunk_size;
 					}
 
 					getReadChunk(RF, chunkQ, (chunk_size * i), last_chunk_size);
+					//printSequence(chunkQ, 0, last_chunk_size, 1);
 
 				}
 
 				// If strandT is Negative
 				if (minmatch.strandT == 1){
 
-					if (i == 0){
+					if (i == 0 && (RF->seqlen % chunk_size) != 0){
 						last_chunk_size = (RF->seqlen) % chunk_size;
 					}else{
 						last_chunk_size = chunk_size;
@@ -253,7 +255,7 @@ int chunkFilter(struct seqfile_t *RF, struct seqfile_t *TF, uint32_t chunk_num, 
 				} // If strandQ is Positive
 				else if (minmatch.strandT == 0){
 
-					if (i == (chunk_num - 1)){
+					if (i == (chunk_num - 1) && (RF->seqlen % chunk_size) != 0){
 						last_chunk_size = (RF->seqlen) % chunk_size;
 					}else{
 						last_chunk_size = chunk_size;
@@ -264,20 +266,22 @@ int chunkFilter(struct seqfile_t *RF, struct seqfile_t *TF, uint32_t chunk_num, 
 				}
 
 
-				printf("strandQ %d \n", minmatch.strandQ);
+				/* printf("strandQ %d \n", minmatch.strandQ);
 				printf("strandT %d \n", minmatch.strandT);
-				printf("last_chunk_size %d \n", last_chunk_size);
-				printSequence(chunkQ, 0, last_chunk_size, 1);
-				printSequence(chunkT, 0, last_chunk_size, 1);
+				printf("last_chunk_size %d \n", last_chunk_size); */
+				/* printSequence(chunkQ, 0, last_chunk_size, 1);
+				printSequence(chunkT, 0, last_chunk_size, 1); */
  
 
-				if(SneakySnake(last_chunk_size, chunkT, chunkQ, last_chunk_size/100, ceil(last_chunk_size/10.0), 0, 1)){
+				printf("lastChunkSize %d \n", last_chunk_size);
+				 if(SneakySnake(last_chunk_size, chunkT, chunkQ, last_chunk_size/100, ceil(last_chunk_size/10.0), 0, 1)){
 					accepted++;
 				}else {
 					printf("Chunk Accettati %d/%d \n", accepted, chunk_num);
+					//printf("lastChunkSize %d \n", last_chunk_size);
 					return 0;
 				}
-
+ 
 			}
 
 	printf("Chunk Accettati %d/%d \n", accepted, chunk_num);
@@ -380,7 +384,10 @@ void chunkElaboration(cvector_vector_type(struct minimatch_t) * matches, struct 
 
 		uint32_t last_chunk_size = 0;
 		uint32_t chunk_size = MAX_GENOME_CHUNK_SIZE;
-		chunk_num = (RF->seqlen <= MAX_GENOME_CHUNK_SIZE) ? 1 : ceil(RF->seqlen / (MAX_GENOME_CHUNK_SIZE) + 0.5);
+		chunk_num = (RF->seqlen <= MAX_GENOME_CHUNK_SIZE) ? 1 : ceil(RF->seqlen / (MAX_GENOME_CHUNK_SIZE));
+
+		//printf("chunkNum: %ld \n", chunk_num);
+			
 		minmatch = *(*matches + (cvector_size(*matches) - 1));
 		
 		if(chunkFilter(RF, TF, chunk_num, minmatch, leftOffsetT, last_chunk_size, chunk_size)){
@@ -620,22 +627,16 @@ int chunkFilter_bp32(struct seqfile_t *RF, struct seqfile_t *TF, uint32_t chunk_
 				// If strandQ is Negative
 				if(minmatch.strandQ == 1){
 
-					if (i == 0){
+					if (i == 0 && (RF->seqlen % chunk_size) != 0){
 						last_chunk_size = (RF->seqlen) % chunk_size;
 					}else{
 						last_chunk_size = chunk_size;
 					}
 
-					getReadChunk_bp32(RF, chunkQ, (chunk_size * (chunk_num - 1 - i)), last_chunk_size);
-					printSequence_bp32(chunkQ, 0, last_chunk_size, 1);
-					reverseComplement_bp32(chunkQ, last_chunk_size);
-					printSequence_bp32(chunkQ, 0, last_chunk_size, 1);
-
-
 				} // If strandQ is Positive
 				else if(minmatch.strandQ == 0){
 
-					if (i == (chunk_num - 1)){
+					if (i == (chunk_num - 1) && (RF->seqlen % chunk_size) != 0){
 						last_chunk_size = (RF->seqlen) % chunk_size;
 					}else{
 						last_chunk_size = chunk_size;
@@ -648,57 +649,41 @@ int chunkFilter_bp32(struct seqfile_t *RF, struct seqfile_t *TF, uint32_t chunk_
 				// If strandT is Negative
 				if (minmatch.strandT == 1){
 
-					if (i == 0){
+					if (i == 0 && (RF->seqlen % chunk_size) != 0){
 						last_chunk_size = (RF->seqlen) % chunk_size;
 					}else{
 						last_chunk_size = chunk_size;
 					}
 
-					/* #ifdef MULTITHREADING
-					pthread_mutex_lock(&TF_mutex); */
-					strandTNegative_bp32(RF,TF,chunk_num,minmatch,leftOffsetT,chunk_size, last_chunk_size, i);
-					/* pthread_mutex_unlock(&TF_mutex);
-					#else
-					strandTNegative_bp32(RF,TF,chunk_num,minmatch,leftOffsetT,chunk_size, last_chunk_size, i);
-					#endif */
-					
-						
+					strandTNegative_bp32(RF,TF,chunk_num,minmatch,leftOffsetT,chunk_size, last_chunk_size, i);	
  
 				} // If strandQ is Positive
 				else if (minmatch.strandT == 0){
 
-					if (i == (chunk_num - 1)){
+					if (i == (chunk_num - 1) && (RF->seqlen % chunk_size) != 0){
 						last_chunk_size = (RF->seqlen) % chunk_size;
 					}else{
 						last_chunk_size = chunk_size;
 					}
 					
-				/* 		#ifdef MULTITHREADING
-					pthread_mutex_lock(&TF_mutex); */
 					strandTPositive_bp32(RF, TF, chunk_num, minmatch, leftOffsetT, chunk_size , last_chunk_size, i);
-					/* pthread_mutex_unlock(&TF_mutex);
-					#else
-					strandTPositive_bp32(RF, TF, chunk_num, minmatch, leftOffsetT, chunk_size , last_chunk_size, i);
-					#endif */
-					
-					
-					
+
 				}
  
-				printf("strandQ %d \n", minmatch.strandQ);
+				/* printf("strandQ %d \n", minmatch.strandQ);
 				printf("strandT %d \n", minmatch.strandT);
 				printf("startQ %d \n", minmatch.startQ);
 				printf("startT %d \n", minmatch.startT);
-				printf("last_chunk_size %d \n", last_chunk_size);
+				printf("last_chunk_size %d \n", last_chunk_size); */
 				/* printSequence_bp32(chunkQ, 0, last_chunk_size, 1);
 				printSequence_bp32(chunkT, 0, last_chunk_size, 1);  */
 
-				if(SneakySnake_bp32(last_chunk_size, chunkT, chunkQ, last_chunk_size/100, ceil(last_chunk_size/10.0), 0, 1)){
+				 if(SneakySnake_bp32(last_chunk_size, chunkT, chunkQ, last_chunk_size/100, ceil(last_chunk_size/10.0), 0, 1)){
 					accepted++;
 				}else {
 					printf("Chunk Accettati %d/%d \n", accepted, chunk_num);
 					return 0;
-				}
+				}   
 
 			}
 
@@ -716,12 +701,11 @@ void chunkElaboration_bp32(cvector_vector_type(struct minimatch_t) * matches, st
 	struct minimatch_t minmatch;
 	uint32_t leftOffsetT;
 	uint32_t last_chunk_size = 0;
-	int i = 0;
 	while (cvector_size(*matches))
 	{
 		uint32_t last_chunk_size = 0;
 		uint32_t chunk_size = MAX_GENOME_CHUNK_SIZE;
-		chunk_num = (RF->seqlen <= MAX_GENOME_CHUNK_SIZE) ? 1 : ceil(RF->seqlen / (MAX_GENOME_CHUNK_SIZE) + 0.5);
+		chunk_num = (RF->seqlen <= MAX_GENOME_CHUNK_SIZE) ? 1 : ceil((double) RF->seqlen / (MAX_GENOME_CHUNK_SIZE));
 		minmatch = *(*matches + (cvector_size(*matches) - 1));
 
 		
@@ -732,17 +716,15 @@ void chunkElaboration_bp32(cvector_vector_type(struct minimatch_t) * matches, st
 					}
 					pthread_mutex_unlock(&TF_mutex);
 		#else */
-					if(chunkFilter_bp32(RF, TF, chunk_num, minmatch, leftOffsetT, last_chunk_size, chunk_size)){
-						printf("Allineamento \n");
-					}
+
+
+		if(chunkFilter_bp32(RF, TF, chunk_num, minmatch, leftOffsetT, last_chunk_size, chunk_size)){
+			printf("Allineamento \n");
+		} 
 	/* 	#endif */
-		
-	
-		i++;
+
 		cvector_pop_back(*matches);
 	}
-
-	printf("minmatch_Num: %d \n", i);
 
 	// Free
 	//wavefront_aligner_delete(wf_aligner); 

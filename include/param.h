@@ -9,7 +9,7 @@
 #define READS_FILE_PATH         "data/reads/"
 #define INDEX_FILE_PATH         "data/index/"
 
-#define MODE_COMPRESSED         0x1                 // Comment this to disable compressed mode
+//#define MODE_COMPRESSED         0x1                 // Comment this to disable compressed mode
 
 #ifdef MODE_COMPRESSED
     #define TARGET_FILE_NAME        "salmonellaEntericaShrt.bp32"
@@ -32,7 +32,7 @@
 
 /*  ######### TUNING PARAMETERS #########  */
 
-#define MAX_GENOME_CHUNK_SIZE   512//4*1024             // Maximum Chunk Size allowed to store Genome locally
+#define MAX_GENOME_CHUNK_SIZE   512 //4*1024             // Maximum Chunk Size allowed to store Genome locally
 #define MAX_READ_CHUNK_SIZE     1*1024              // Maximum Chunk Size allowed to store Read locally
 #define MAX_HASHBAND_SIZE       64*1024             // Maximum HashBand number of entries
 #define MAX_HASHNODES           32                  // Maximum number of Linked List Nodes per HashBand entry 
