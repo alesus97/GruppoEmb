@@ -1,9 +1,6 @@
 #include "map.h"
 #include <inttypes.h>
 
-
-uint64_t totalAccepted = 0;
-
 #ifdef MULTITHREADING
 
 	extern pthread_mutex_t TF_mutex;
@@ -87,7 +84,6 @@ void MapReadsToGenome(struct seqfile_t *TF, struct seqfile_t *RF, FILE *SAMfile)
 			break;
 	}
 
-	printf("totalAccepted %d \n", totalAccepted);
 	// free area
 	free(chunkA);
 	free(chunkB);
@@ -224,7 +220,6 @@ int chunkFilter(struct seqfile_t *RF, struct seqfile_t *TF, uint32_t chunk_num, 
 					}
 
 					getReadChunk(RF, temp_chunk, (chunk_size * (chunk_num - 1 - i)), last_chunk_size);
-					//printSequence(chunkQ, 0, last_chunk_size, 1);
 					reverseComplement(temp_chunk, chunkQ, last_chunk_size);
 
 				} // If strandQ is Positive
@@ -237,7 +232,6 @@ int chunkFilter(struct seqfile_t *RF, struct seqfile_t *TF, uint32_t chunk_num, 
 					}
 
 					getReadChunk(RF, chunkQ, (chunk_size * i), last_chunk_size);
-					//printSequence(chunkQ, 0, last_chunk_size, 1);
 
 				}
 
@@ -264,28 +258,25 @@ int chunkFilter(struct seqfile_t *RF, struct seqfile_t *TF, uint32_t chunk_num, 
 					strandTPositive(RF, TF, chunk_num, minmatch, leftOffsetT, chunk_size , last_chunk_size, i);
 					
 				}
-
-
-				/* printf("strandQ %d \n", minmatch.strandQ);
-				printf("strandT %d \n", minmatch.strandT);
-				printf("last_chunk_size %d \n", last_chunk_size); */
-				/* printSequence(chunkQ, 0, last_chunk_size, 1);
-				printSequence(chunkT, 0, last_chunk_size, 1); */
- 
-
-				printf("lastChunkSize %d \n", last_chunk_size);
-				 if(SneakySnake(last_chunk_size, chunkT, chunkQ, last_chunk_size/100, ceil(last_chunk_size/10.0), 0, 1)){
+			
+				
+				if(SneakySnake(last_chunk_size, chunkT, chunkQ, last_chunk_size/100, ceil(last_chunk_size/10.0), 0, 1)){
 					accepted++;
 				}else {
-					printf("Chunk Accettati %d/%d \n", accepted, chunk_num);
-					//printf("lastChunkSize %d \n", last_chunk_size);
+					#ifdef VERBOSE
+						printf("Accepted Chunks %d/%d. Alignment not started. \n", accepted, chunk_num);
+					#endif
+
 					return 0;
 				}
  
 			}
 
-	printf("Chunk Accettati %d/%d \n", accepted, chunk_num);
 
+	#ifdef VERBOSE
+		printf("Accepted Chunks. Start alignment %d/%d \n", accepted, chunk_num);
+	#endif
+	
 	return 1;
 
 }
@@ -385,8 +376,6 @@ void chunkElaboration(cvector_vector_type(struct minimatch_t) * matches, struct 
 		uint32_t last_chunk_size = 0;
 		uint32_t chunk_size = MAX_GENOME_CHUNK_SIZE;
 		chunk_num = (RF->seqlen <= MAX_GENOME_CHUNK_SIZE) ? 1 : ceil(RF->seqlen / (MAX_GENOME_CHUNK_SIZE));
-
-		//printf("chunkNum: %ld \n", chunk_num);
 			
 		minmatch = *(*matches + (cvector_size(*matches) - 1));
 		
@@ -480,7 +469,6 @@ void MapReadsToGenome_bp32(struct seqfile_t *TF, struct seqfile_t *RF, FILE *SAM
 		MapChunksToGenome_bp32(chunkA, chunkB, chunk_num, chunk_size, k, w, &matches, RF, TF);
 	}	
 
-	printf("totalAccepted %d \n", totalAccepted);
 	// free area
 	free(chunkA);
 	free(chunkB);
@@ -670,25 +658,19 @@ int chunkFilter_bp32(struct seqfile_t *RF, struct seqfile_t *TF, uint32_t chunk_
 
 				}
  
-				/* printf("strandQ %d \n", minmatch.strandQ);
-				printf("strandT %d \n", minmatch.strandT);
-				printf("startQ %d \n", minmatch.startQ);
-				printf("startT %d \n", minmatch.startT);
-				printf("last_chunk_size %d \n", last_chunk_size); */
-				/* printSequence_bp32(chunkQ, 0, last_chunk_size, 1);
-				printSequence_bp32(chunkT, 0, last_chunk_size, 1);  */
-
 				 if(SneakySnake_bp32(last_chunk_size, chunkT, chunkQ, last_chunk_size/100, ceil(last_chunk_size/10.0), 0, 1)){
 					accepted++;
 				}else {
-					printf("Chunk Accettati %d/%d \n", accepted, chunk_num);
+					#ifdef VERBOSE
+						printf("Accepted Chunks %d/%d. Alignment not started. \n", accepted, chunk_num);
+					#endif
 					return 0;
 				}   
 
 			}
-
-	printf("Chunk Accettati %d/%d \n", accepted, chunk_num);
-
+	#ifdef VERBOSE
+		printf("Accepted Chunks. Start alignment %d/%d \n", accepted, chunk_num);
+	#endif
 	return 1;
 
 }
@@ -701,6 +683,10 @@ void chunkElaboration_bp32(cvector_vector_type(struct minimatch_t) * matches, st
 	struct minimatch_t minmatch;
 	uint32_t leftOffsetT;
 	uint32_t last_chunk_size = 0;
+
+	//Alignment parameters
+
+
 	while (cvector_size(*matches))
 	{
 		uint32_t last_chunk_size = 0;
@@ -708,20 +694,10 @@ void chunkElaboration_bp32(cvector_vector_type(struct minimatch_t) * matches, st
 		chunk_num = (RF->seqlen <= MAX_GENOME_CHUNK_SIZE) ? 1 : ceil((double) RF->seqlen / (MAX_GENOME_CHUNK_SIZE));
 		minmatch = *(*matches + (cvector_size(*matches) - 1));
 
-		
-		/* #ifdef MULTITHREADING
-					pthread_mutex_lock(&TF_mutex);
-					if(chunkFilter_bp32(RF, TF, chunk_num, minmatch, leftOffsetT, last_chunk_size, chunk_size)){
-						printf("Allineamento \n");
-					}
-					pthread_mutex_unlock(&TF_mutex);
-		#else */
-
-
 		if(chunkFilter_bp32(RF, TF, chunk_num, minmatch, leftOffsetT, last_chunk_size, chunk_size)){
 			printf("Allineamento \n");
 		} 
-	/* 	#endif */
+
 
 		cvector_pop_back(*matches);
 	}
