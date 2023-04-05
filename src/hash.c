@@ -40,7 +40,7 @@ void addToHashTable( struct hashband_t * ht, const struct hashmizer_t * hm ){
 }
 
 void queryHashTable( const struct hashband_t * ht, const struct hashmizer_t * hm, cvector_vector_type(struct minimatch_t) * matches ){
-	
+
 	uint32_t index = hm->hash % ht->size;
 	uint64_t current_file_offset = ( ht->entry[index]->next != NULL ) ? ht->entry[index]->next->file_offset : 0;
 

@@ -50,7 +50,7 @@ void * mapper_thread(void* in){
 
     #else
         createThreadReadFile(thread_ctx, thread_reads_path);
-        printf("[Main][Thread<%03u>][Cpu<%03u>] Performing on %lu reads\n", thread_ctx->id, sched_getcpu(), thread_ctx->reads_num);
+        printf("[Main][Thread<%03u>][Cpu<%03u>] Performing on %u reads\n", thread_ctx->id, sched_getcpu(), thread_ctx->reads_num);
 
         pthread_mutex_lock(&RF_mutex);
         fillThreadReadFile(thread_ctx, thread_reads_path);
@@ -86,30 +86,38 @@ void createThreadReadFile(struct mapper_ctx_t * thread_ctx, char * thread_reads_
 
 void fillThreadReadFile(struct mapper_ctx_t * thread_ctx, char * thread_reads_path){
 
-    uint64_t read_len = 0;
-    uint64_t chunk_size;
-    uint64_t chunk_num;
+    uint32_t chunk_size = MAX_GENOME_CHUNK_SIZE;
+    uint32_t read_len = 0;
+    //uint64_t chunk_size;
+    uint32_t chunk_num;
     uint32_t size;
 
     /* Copy original read file into temporary thread files */
 
-    for( uint64_t i = 0; i < thread_ctx->reads_num; i++ ){
+    for( uint32_t i = 0; i < thread_ctx->reads_num; i++ ){
 
 		getNextRead(thread_ctx->RF_global);
-        read_len = (uint64_t)thread_ctx->RF_global->seqlen;
-  
-        fprintf(thread_ctx->RF_local.file, ">MICROMAP_MTHREAD %lu length=%lu\n", i+1, read_len);
-        chunk_size = (read_len < MAX_GENOME_CHUNK_SIZE) ? read_len : MAX_GENOME_CHUNK_SIZE;
-        chunk_num = ceil(read_len / chunk_size);
+        read_len = thread_ctx->RF_global->seqlen;
+
+        //printf("1) read_len %u \n", read_len);
+
+        fprintf(thread_ctx->RF_local.file, ">MICROMAP_MTHREAD %u length=%u\n", i+1, read_len);
+
+       // printf("2) read_len %u \n", read_len);
+        chunk_size = (read_len < chunk_size) ? read_len : chunk_size;
+        chunk_num = ceil((double)  read_len / chunk_size);
 
         //if(i%thread_num == 0)printf("Writing a seq of len %05u, with a chunk of %05u and %01u chunks to file %03u-%016x\n", read_len, chunk_size, chunk_num, i%thread_num, ftell(thread_RF[i%thread_num].file));
 
         for( uint32_t j = 0; j < chunk_num; j++ ){
                     
-            if( j == chunk_num-1 ) size = (chunk_size%MAX_GENOME_CHUNK_SIZE == 0) ? chunk_size : chunk_size%(MAX_GENOME_CHUNK_SIZE);
-            else size = chunk_size;
+            if( j == chunk_num-1 && (read_len % chunk_size) != 0 ){
+                size = read_len % chunk_size;
+            }else{
+                size = chunk_size;
+            } 
 
-            getReadChunk(thread_ctx->RF_global, chunk, j * chunk_size, size);
+            getReadChunk(thread_ctx->RF_global, chunk, (j * chunk_size), size);
             
             for( uint32_t k = 0; k < size; k++ ){
                 fputc(chunk[k], thread_ctx->RF_local.file);

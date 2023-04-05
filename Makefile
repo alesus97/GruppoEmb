@@ -3,7 +3,7 @@ CC = gcc
 ARM_CROSSCOMPILER = arm-linux-gnueabihf-gcc
 
 #Libraries to use
-LDFLAGS = -lm -w -lpthread
+LDFLAGS = -lm -lpthread -w
 
 #Folders definition
 SRCS = $(wildcard src/*.c) $(wildcard WFA2/*/*.c)
@@ -18,10 +18,10 @@ K := $(foreach exec,$(EXECUTABLES),\
 all: x86 arm success
 
 x86:
-	@ $(CC) -Iinclude -o micromapX86.elf $(SRCS) $(LDFLAGS)
+	@ $(CC) -I include -o micromapX86.elf $(SRCS) $(LDFLAGS)
 	
 arm:
-	@ $(ARM_CROSSCOMPILER) -Iinclude -o micromapARM.elf $(SRCS) $(LDFLAGS) -static
+	@ $(ARM_CROSSCOMPILER) -I include -o micromapARM.elf $(SRCS) $(LDFLAGS) -static
 	
 success:
 	@$(ECHO) "Build succeeded"	
@@ -39,4 +39,4 @@ help:
 
 clean:
 	# @$(ECHO) "  Cleanup done"	
-	@ rm -rf *.o *.elf | clear
+	@ rm -rf *.o *.elf  ./data/reads/thread/* ./data/index/*.hb | clear

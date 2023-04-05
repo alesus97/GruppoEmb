@@ -17,6 +17,8 @@
 struct timespec start, end;
 double time_elapsed;
 
+extern double filtering_time, aligment_time;
+
 int main(){
 
     /* Reference Genome and Reads files structures*/
@@ -172,5 +174,17 @@ int main(){
     freeHashTable(&TF.index);
     fclose(RF.file);
     fclose(TF.file);
+
+    uint32_t x = 4196806;
+
+    double throughput = x/(pow(10,3)*time_elapsed);
+    printf("Throughput: %08.8f reads/s\n ", throughput);
+
+   double seeding_time = time_elapsed - filtering_time - aligment_time;
+   #ifdef VERBOSE
+         printf("[Main] Seeding time %08.8f s\n\n", seeding_time);
+         printf("[ChunkElaboration] Filtering time %08.8f s\n\n", filtering_time);
+		printf("[ChunkElaboration] Alignment time %08.8f s\n\n", aligment_time);
+    #endif
 
 }

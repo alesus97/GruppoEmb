@@ -7,6 +7,11 @@
 	
 #endif
 
+struct timespec start_filtering, end_filtering, start_alignment, end_alignment;
+double filtering_time, aligment_time;
+
+double temptime;
+
 #ifndef MODE_COMPRESSED
 
 	bp_t chunkQ[MAX_GENOME_CHUNK_SIZE]; // Chunk for the Query  (i.e. the read)
@@ -88,6 +93,7 @@ void MapReadsToGenome(struct seqfile_t *TF, struct seqfile_t *RF, FILE *SAMfile)
 	free(chunkA);
 	free(chunkB);
 	cvector_free(matches);
+
 }
 
 void MapChunksToGenome(bp_t *chunkA, bp_t *chunkB, const uint32_t chunk_num, const uint32_t chunk_size, const uint8_t k, const uint8_t w, cvector_vector_type(struct minimatch_t) * matches, struct seqfile_t *RF, struct seqfile_t *TF)
@@ -128,7 +134,10 @@ void MapChunksToGenome(bp_t *chunkA, bp_t *chunkB, const uint32_t chunk_num, con
 		effective_chunk_size = (last_chunk_size) ? last_chunk_size : chunk_size;
 
 		// find chunked read (RF) minimizers and match them against the reference genome (TF). Matching minimizers are saved into the matches vector
+		
+		
 		findAndMatchChunkMinimizers(chunkA, chunkB, chunk_size, i, k, w, matches, RF, TF);
+
 		// printf("Read[%08u::%04u] matched [%08lu] times\n", RF->seqid, i, cvector_size(*matches));
 
 		/*
@@ -243,8 +252,16 @@ int chunkFilter(struct seqfile_t *RF, struct seqfile_t *TF, uint32_t chunk_num, 
 					}else{
 						last_chunk_size = chunk_size;
 					}
+
+					#ifdef MULTITHREADING
+						pthread_mutex_lock(&TF_mutex);
+						strandTNegative(RF,TF,chunk_num,minmatch,leftOffsetT,chunk_size, last_chunk_size, i);	
+						pthread_mutex_unlock(&TF_mutex);
+					#else
+						strandTNegative(RF,TF,chunk_num,minmatch,leftOffsetT,chunk_size, last_chunk_size, i);	
+					#endif
 					
-					strandTNegative(RF,TF,chunk_num,minmatch,leftOffsetT,chunk_size, last_chunk_size, i);	
+					
  
 				} // If strandQ is Positive
 				else if (minmatch.strandT == 0){
@@ -255,26 +272,69 @@ int chunkFilter(struct seqfile_t *RF, struct seqfile_t *TF, uint32_t chunk_num, 
 						last_chunk_size = chunk_size;
 					}
 
-					strandTPositive(RF, TF, chunk_num, minmatch, leftOffsetT, chunk_size , last_chunk_size, i);
+					#ifdef MULTITHREADING
+						pthread_mutex_lock(&TF_mutex);
+						strandTPositive(RF, TF, chunk_num, minmatch, leftOffsetT, chunk_size , last_chunk_size, i);
+						pthread_mutex_unlock(&TF_mutex);
+					#else
+						strandTPositive(RF, TF, chunk_num, minmatch, leftOffsetT, chunk_size , last_chunk_size, i);
+					#endif
+
 					
 				}
 			
 				
+
+
+				#ifdef TAKE_TIME
+						clock_gettime(CLOCK_MONOTONIC, &start_filtering);
+						if(SneakySnake(last_chunk_size, chunkT, chunkQ, last_chunk_size/100, ceil(last_chunk_size/10.0), 0, 1)){
+							accepted++;
+
+						clock_gettime(CLOCK_MONOTONIC, &end_filtering);
+						
+						double temptime;
+						if ((end_filtering.tv_nsec-start_filtering.tv_nsec)<0){
+							temptime = (1000000000 + end_filtering.tv_nsec - start_filtering.tv_nsec)/ 1000000000.0;
+						}else{
+							temptime = (end_filtering.tv_nsec - start_filtering.tv_nsec) / 1000000000.0 ;
+						}
+
+						filtering_time += temptime;
+						}else {
+							#ifdef VERBOSE
+							//printf("Accepted Chunks %d/%d. Alignment not started. \n", accepted, chunk_num);
+							#endif
+						clock_gettime(CLOCK_MONOTONIC, &end_filtering);
+						
+						double temptime;
+						if ((end_filtering.tv_nsec-start_filtering.tv_nsec)<0){
+							temptime = (1000000000 + end_filtering.tv_nsec - start_filtering.tv_nsec)/ 1000000000.0;
+						}else{
+							temptime = (end_filtering.tv_nsec - start_filtering.tv_nsec) / 1000000000.0 ;
+						}
+
+						filtering_time += temptime;
+							return 0;
+						}
+				#else
+
 				if(SneakySnake(last_chunk_size, chunkT, chunkQ, last_chunk_size/100, ceil(last_chunk_size/10.0), 0, 1)){
 					accepted++;
 				}else {
 					#ifdef VERBOSE
-						printf("Accepted Chunks %d/%d. Alignment not started. \n", accepted, chunk_num);
+						//printf("Accepted Chunks %d/%d. Alignment not started. \n", accepted, chunk_num);
 					#endif
 
 					return 0;
 				}
+			#endif
  
 			}
 
 
 	#ifdef VERBOSE
-		printf("Accepted Chunks. Start alignment %d/%d \n", accepted, chunk_num);
+		//printf("Accepted Chunks. Start alignment %d/%d \n", accepted, chunk_num);
 	#endif
 	
 	return 1;
@@ -323,8 +383,16 @@ void chunkAlign(struct seqfile_t *RF, struct seqfile_t *TF, uint32_t chunk_num, 
 							}else{
 								last_chunk_size = chunk_size;
 							}
+
+							#ifdef MULTITHREADING
+								pthread_mutex_lock(&TF_mutex);
+								strandTNegative(RF,TF,chunk_num,minmatch,leftOffsetT,chunk_size, last_chunk_size, j);
+								pthread_mutex_unlock(&TF_mutex);
+							#else
+								strandTNegative(RF,TF,chunk_num,minmatch,leftOffsetT,chunk_size, last_chunk_size, j);
+							#endif
 							
-							strandTNegative(RF,TF,chunk_num,minmatch,leftOffsetT,chunk_size, last_chunk_size, j);
+							
 		
 						} // If strandQ is Positive
 						else if (minmatch.strandT == 0){
@@ -335,17 +403,41 @@ void chunkAlign(struct seqfile_t *RF, struct seqfile_t *TF, uint32_t chunk_num, 
 								last_chunk_size = chunk_size;
 							}
 
-							strandTPositive(RF, TF, chunk_num, minmatch, leftOffsetT, chunk_size , last_chunk_size, j);
+							#ifdef MULTITHREADING
+								pthread_mutex_lock(&TF_mutex);
+								strandTPositive(RF, TF, chunk_num, minmatch, leftOffsetT, chunk_size , last_chunk_size, j);
+								pthread_mutex_unlock(&TF_mutex);
+							#else
+								strandTPositive(RF, TF, chunk_num, minmatch, leftOffsetT, chunk_size , last_chunk_size, j);
+							#endif
 							
 						}
 
-						printf("ChunkT elaborati %d/%d \n",j, chunk_num - 1);
+					//	printf("ChunkT elaborati %d/%d \n",j, chunk_num - 1);
 
 						//Allineo	
-						wavefront_align(wf_aligner,chunkQ,last_chunk_size,chunkT,last_chunk_size);
-					   	fprintf(stderr,"WFA-Alignment returns score %d\n",wf_aligner->cigar->score);
+						#ifdef TAKE_TIME
+							clock_gettime(CLOCK_MONOTONIC, &start_alignment);
+						
+							wavefront_align(wf_aligner,chunkQ,last_chunk_size,chunkT,last_chunk_size);
+
+							clock_gettime(CLOCK_MONOTONIC, &end_alignment);
+						
+							double temptime;
+							if ((end_alignment.tv_nsec-start_alignment.tv_nsec)<0){
+								temptime = (1000000000 + end_alignment.tv_nsec - start_alignment.tv_nsec)/ 1000000000.0;
+							}else{
+								temptime = (end_alignment.tv_nsec - start_alignment.tv_nsec) / 1000000000.0 ;
+							}
+
+							aligment_time += temptime;
+						#else
+							wavefront_align(wf_aligner,chunkQ,last_chunk_size,chunkT,last_chunk_size);
+						#endif
+
+					   /* 	fprintf(stderr,"WFA-Alignment returns score %d\n",wf_aligner->cigar->score);
 						fprintf(stderr,"  SCORE (RE)COMPUTED %d\n",
-						cigar_score_gap_affine(wf_aligner->cigar,&attributes.affine_penalties));
+						cigar_score_gap_affine(wf_aligner->cigar,&attributes.affine_penalties)); */
 					
 					}		
 			 } 
@@ -379,9 +471,9 @@ void chunkElaboration(cvector_vector_type(struct minimatch_t) * matches, struct 
 			
 		minmatch = *(*matches + (cvector_size(*matches) - 1));
 		
-		if(chunkFilter(RF, TF, chunk_num, minmatch, leftOffsetT, last_chunk_size, chunk_size)){
+		 if(chunkFilter(RF, TF, chunk_num, minmatch, leftOffsetT, last_chunk_size, chunk_size)){
 			chunkAlign(RF, TF, chunk_num, minmatch, leftOffsetT, last_chunk_size, chunk_size, attributes, wf_aligner);
-		}
+		} 
 
 		cvector_pop_back(*matches);
 				

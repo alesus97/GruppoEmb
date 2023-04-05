@@ -288,6 +288,7 @@ void BuildIndex_bp32( struct seqfile_t * TF ){
     #endif
 
     seq_size = ( genome_size <= MAX_GENOME_CHUNK_SIZE ) ? genome_size : MAX_GENOME_CHUNK_SIZE ;
+
     ref_seqA = (bp32_t *)malloc(sizeof(bp32_t)*ceil(seq_size/32));
     ref_seqB = (bp32_t *)malloc(sizeof(bp32_t)*ceil(seq_size/32));
 
@@ -490,6 +491,8 @@ void findMinimizer_bp32( const bp32_t * seqA, const bp32_t * seqB, uint64_t seqO
         }
 
 	}
+
+   
 
 }
 

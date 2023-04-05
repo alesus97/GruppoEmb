@@ -16,6 +16,8 @@
 	
 #endif
 
+extern double filtering_time, alignment_time;
+
 
 /* 	Notes on cvector_vector_type 
 
@@ -91,8 +93,12 @@ struct mapper_ctx_t{
 	struct seqfile_t * TF_global;
 	struct seqfile_t * RF_global;
 	pthread_t thread_handler;
-	uint64_t reads_num;
+	uint32_t reads_num;
 	uint8_t id;
+
+	struct timespec start_filtering, end_filtering;
+	struct timespec start_alignment, end_alignment;
+	struct timespec start_seeding, end_seeding;
 	
 };
 
