@@ -8,7 +8,7 @@
 #endif
 
 struct timespec start_filtering, end_filtering, start_alignment, end_alignment;
-double filtering_time, aligment_time;
+double filtering_time, alignment_time;
 
 double temptime;
 
@@ -430,7 +430,7 @@ void chunkAlign(struct seqfile_t *RF, struct seqfile_t *TF, uint32_t chunk_num, 
 								temptime = (end_alignment.tv_nsec - start_alignment.tv_nsec) / 1000000000.0 ;
 							}
 
-							aligment_time += temptime;
+							alignment_time += temptime;
 						#else
 							wavefront_align(wf_aligner,chunkQ,last_chunk_size,chunkT,last_chunk_size);
 						#endif

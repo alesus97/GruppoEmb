@@ -10,6 +10,9 @@
 
     #include "mthread.h"
 
+    extern double filtering_time_vector[THREADSNUM];
+    extern double alignment_time_vector[THREADSNUM];
+
 #endif
 
 /* Time measuring global variables */
@@ -17,7 +20,7 @@
 struct timespec start, end;
 double time_elapsed;
 
-extern double filtering_time, aligment_time;
+extern double filtering_time, alignment_time;
 
 int main(){
 
@@ -106,11 +109,15 @@ int main(){
             MapReadsToGenome(&TF, &RF, NULL);
         #endif
 
+
+
     #else
         
         uint64_t reads_num = 0;
         uint16_t thread_num;
         struct mapper_ctx_t * thread_ctx;
+
+     
 
         thread_num = (get_nprocs() <= THREADSNUM) ? get_nprocs() : THREADSNUM;
         thread_ctx = (struct mapper_ctx_t *) malloc(sizeof(struct mapper_ctx_t)*thread_num);
@@ -160,6 +167,18 @@ int main(){
         mutex_group_destroy();
         free(thread_ctx);
 
+        double sum_alignment = 0;
+        double sum_filtering = 0;
+
+        for(uint32_t i=0; i<thread_num; i++){
+            sum_alignment += alignment_time_vector[i];
+            sum_filtering += filtering_time_vector[i];     
+        }
+
+        filtering_time = sum_filtering/thread_num;
+        alignment_time = sum_alignment/thread_num;
+
+
     #endif
 
     #ifdef TAKE_TIME
@@ -175,16 +194,16 @@ int main(){
     fclose(RF.file);
     fclose(TF.file);
 
-    uint32_t x = 4196806;
+     uint32_t x = 4196806;
 
     double throughput = x/(pow(10,3)*time_elapsed);
-    printf("Throughput: %08.8f reads/s\n ", throughput);
+    printf("[Main] Throughput: %08.8f reads/s\n", throughput);
 
-   double seeding_time = time_elapsed - filtering_time - aligment_time;
-   #ifdef VERBOSE
-         printf("[Main] Seeding time %08.8f s\n\n", seeding_time);
-         printf("[ChunkElaboration] Filtering time %08.8f s\n\n", filtering_time);
-		printf("[ChunkElaboration] Alignment time %08.8f s\n\n", aligment_time);
-    #endif
+   double seeding_time = time_elapsed - filtering_time - alignment_time;
+    #ifdef VERBOSE
+        printf("[Main] Seeding time %08.8f s\n", seeding_time);
+        printf("[ChunkElaboration] Filtering time %08.8f s\n", filtering_time);
+		printf("[ChunkElaboration] Alignment time %08.8f s\n\n", alignment_time);
+    #endif  
 
 }

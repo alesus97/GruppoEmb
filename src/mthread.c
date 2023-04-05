@@ -12,6 +12,10 @@
 pthread_mutex_t TF_mutex;           //Used by the the mapping function
 pthread_mutex_t RF_mutex;           //Used here to fill the thread file
 
+
+double filtering_time_vector[THREADSNUM];
+double alignment_time_vector[THREADSNUM];
+
 void mutex_group_create(){
     pthread_mutex_init(&TF_mutex, NULL);
     pthread_mutex_init(&RF_mutex, NULL);
@@ -28,11 +32,6 @@ void * mapper_thread(void* in){
     int node;
     struct mapper_ctx_t * thread_ctx = (struct mapper_ctx_t *)in;
     char thread_reads_path[256] = READS_FILE_PATH;
-
-    #ifdef VERBOSE
-        printf("[Main][Thread<%03u>][Cpu<%03u>] Thread running\n", thread_ctx->id, sched_getcpu());
-        printf("[Main][Thread<%03u>][Cpu<%03u>] Creating thread local read files\n", thread_ctx->id, sched_getcpu());
-    #endif
 
     #ifdef MODE_COMPRESSED
 
@@ -61,6 +60,16 @@ void * mapper_thread(void* in){
         #endif
 
         MapReadsToGenome(thread_ctx->TF_global, &(thread_ctx->RF_local), NULL);
+
+        filtering_time_vector[thread_ctx->id] = filtering_time;
+        alignment_time_vector[thread_ctx->id] = alignment_time;
+
+        #ifdef VERBOSE
+            printf("[Main][Thread<%03u>][Cpu<%03u>] Thread running\n", thread_ctx->id, sched_getcpu());
+            printf("[Main][Thread<%03u>][Cpu<%03u>] Creating thread local read files\n", thread_ctx->id, sched_getcpu());
+        #endif
+
+
     #endif
 
     fclose(thread_ctx->RF_local.file);
