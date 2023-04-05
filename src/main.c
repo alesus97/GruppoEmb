@@ -106,7 +106,13 @@ int main(){
         #ifdef MODE_COMPRESSED
             MapReadsToGenome_bp32(&TF, &RF, NULL);
         #else
-            MapReadsToGenome(&TF, &RF, NULL);
+
+        #ifdef TAKE_THROUGHPUT
+            uint32_t x = totalReadLength(&RF);
+        #endif
+
+        MapReadsToGenome(&TF, &RF, NULL);
+            
         #endif
 
 
@@ -115,9 +121,7 @@ int main(){
         
         uint64_t reads_num = 0;
         uint16_t thread_num;
-        struct mapper_ctx_t * thread_ctx;
-
-     
+        struct mapper_ctx_t * thread_ctx;  
 
         thread_num = (get_nprocs() <= THREADSNUM) ? get_nprocs() : THREADSNUM;
         thread_ctx = (struct mapper_ctx_t *) malloc(sizeof(struct mapper_ctx_t)*thread_num);
@@ -151,10 +155,12 @@ int main(){
         /* Init all required mutexex for the threads to share the Index and the global Read file */
         mutex_group_create();
 
+        uint32_t b = ceil(reads_num / thread_num);
+        //uint32_t a = reads_num % (ceil(reads_num / thread_num)/thread_num);
         /* Launching threads */
         for(int i = 0; i < thread_num; i++){
             thread_ctx[i].id = i;
-            thread_ctx[i].reads_num = reads_num / thread_num;
+            thread_ctx[i].reads_num = ceil(reads_num / thread_num) + ceil((double)(reads_num % b)/thread_num) ;
             thread_ctx[i].TF_global = &TF;
             thread_ctx[i].RF_global = &RF;
             if(pthread_create(&(thread_ctx[i].thread_handler), NULL, mapper_thread, &thread_ctx[i]) != 0) {printf("\033[1m\033[31m[Main] Error: Thread number <%d> failed\033[37m\n", i); return -1; }; 
@@ -190,14 +196,12 @@ int main(){
         #endif
     #endif
 
-    freeHashTable(&TF.index);
-    fclose(RF.file);
-    fclose(TF.file);
 
-     uint32_t x = 4196806;
 
-    double throughput = x/(pow(10,3)*time_elapsed);
-    printf("[Main] Throughput: %08.8f reads/s\n", throughput);
+  /*   #ifdef TAKE_THROUGHPUT
+        double throughput = x/(pow(10,3)*time_elapsed);
+        printf("[Main] Throughput: %08.8f reads/s\n", throughput);
+    #endif */
 
    double seeding_time = time_elapsed - filtering_time - alignment_time;
     #ifdef VERBOSE
@@ -205,5 +209,13 @@ int main(){
         printf("[ChunkElaboration] Filtering time %08.8f s\n", filtering_time);
 		printf("[ChunkElaboration] Alignment time %08.8f s\n\n", alignment_time);
     #endif  
+
+
+
+    freeHashTable(&TF.index);
+    fclose(RF.file);
+    fclose(TF.file);
+
+   
 
 }

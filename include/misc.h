@@ -30,6 +30,7 @@ uint64_t min64( uint64_t a, uint64_t b);
 
     void getNextRead(struct seqfile_t * RF);
     void getReadChunk(struct seqfile_t * RF, bp_t * chunk, uint32_t start, uint32_t size);
+    uint32_t totalReadLength(struct seqfile_t * RF);
 
 #else
 

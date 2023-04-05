@@ -59,6 +59,13 @@ void * mapper_thread(void* in){
             printf("[Main][Thread<%03u>][Cpu<%03u>] Running full genome mapping\n", thread_ctx->id, sched_getcpu());
         #endif
 
+
+        #ifdef TAKE_THROUGHPUT
+            uint32_t x = totalReadLength(&(thread_ctx->RF_local));
+        #endif
+
+        printf("[Main][Thread<%03u>][ReadLength <%u>]\n", thread_ctx->id, x);
+
         MapReadsToGenome(thread_ctx->TF_global, &(thread_ctx->RF_local), NULL);
 
         filtering_time_vector[thread_ctx->id] = filtering_time;
@@ -131,9 +138,10 @@ void fillThreadReadFile(struct mapper_ctx_t * thread_ctx, char * thread_reads_pa
             for( uint32_t k = 0; k < size; k++ ){
                 fputc(chunk[k], thread_ctx->RF_local.file);
             }
-
-            fputc('\n', thread_ctx->RF_local.file);
+            
         }
+        
+        fputc('\n', thread_ctx->RF_local.file);
                 
     }
 

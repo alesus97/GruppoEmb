@@ -282,8 +282,7 @@ int chunkFilter(struct seqfile_t *RF, struct seqfile_t *TF, uint32_t chunk_num, 
 
 					
 				}
-			
-				
+
 
 
 				#ifdef TAKE_TIME

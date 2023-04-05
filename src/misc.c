@@ -139,6 +139,31 @@ void getReadChunk(struct seqfile_t * RF, bp_t * chunk, uint32_t start, uint32_t 
 }
 
 
+// Func to calc throughtput
+uint32_t totalReadLength(struct seqfile_t * RF){
+
+	uint32_t total_length = 0;
+
+	while (fgetc(RF->file) != EOF){
+        getNextRead(RF);
+        total_length += RF->seqlen;
+		//printf("RF->seqlen %u \n", RF->seqlen);
+
+        if(fgetc(RF->file) == EOF){
+            break;
+        }
+	}
+
+	//Reset read file pointers
+	    RF->seqid = 0;
+        RF->seqlen = 0;
+        RF->seqstart = 0;
+        fseek(RF->file, 0, SEEK_SET);
+
+	return total_length;
+}
+
+
 #else
 
 void printSequence_bp32( const bp32_t * seq, uint64_t start, uint64_t end, uint8_t newline ){
