@@ -18,10 +18,15 @@
 
 /* Time measuring global variables */
 
-struct timespec start, end;
-double time_elapsed;
+#ifdef TAKE_TIME
 
-extern double filtering_time, alignment_time;
+    struct timespec start, end;
+    double time_elapsed;
+
+    extern double filtering_time, alignment_time;
+    double  seeding_time;
+    
+#endif
 
 int main(){
 
@@ -108,7 +113,7 @@ int main(){
             MapReadsToGenome_bp32(&TF, &RF, NULL);
         #else
 
-        #ifdef TAKE_THROUGHPUT
+        #ifdef TAKE_TIME
             uint32_t total_read_length = totalReadLength(&RF);
         #endif
 
@@ -184,49 +189,64 @@ int main(){
         mutex_group_destroy();
         free(thread_ctx);
 
+    #ifdef TAKE_TIME
         double sum_alignment = 0;
         double sum_filtering = 0;
-        double throughput_per_thread[thread_num];
-
-
+     
         for(uint32_t i=0; i<thread_num; i++){
             sum_alignment += alignment_time_vector[i];
             sum_filtering += filtering_time_vector[i];
-            throughput_per_thread[i] = total_reads_vector[i]/(pow(10,3)*time_elapsed);
-            printf("throughput per thread %f \n", throughput_per_thread[i]);
+            
+           // printf("throughput per thread %f \n", throughput_per_thread[i]);
 
         }
 
         filtering_time = sum_filtering/thread_num;
         alignment_time = sum_alignment/thread_num;
-
+    #endif
         
-
     #endif
 
     #ifdef TAKE_TIME
         clock_gettime(CLOCK_MONOTONIC, &end);
         time_elapsed = (end.tv_sec - start.tv_sec);
         time_elapsed += (end.tv_nsec - start.tv_nsec) / 1000000000.0;
+        
         #ifdef VERBOSE
             printf("[Main] Full-Genome Mapping completed in %08.8f s; %08u reads mapped\n\n", time_elapsed, RF.seqid/* +1 */ );
         #endif
+
+        #ifdef MULTITHREADING
+
+            double sum_throughput = 0;
+            double throughput_per_thread[thread_num];
+            double throughput;
+        
+            for(uint32_t i=0; i<thread_num; i++){
+            throughput_per_thread[i] = total_reads_vector[i]/(pow(10,3)*time_elapsed);
+            sum_throughput += throughput_per_thread[i];
+            
+            }
+
+            throughput = sum_throughput/thread_num;
+        #else 
+
+            double throughput = total_read_length/(pow(10,3)*time_elapsed);
+
+        #endif
+
+        seeding_time = time_elapsed - filtering_time - alignment_time;
+
+        #ifdef VERBOSE
+
+            printf("[Main] Throughput: %08.8f reads/s\n", throughput);
+            printf("[Main] Seeding time %08.8f s\n", seeding_time);
+            printf("[ChunkElaboration] Filtering time %08.8f s\n", filtering_time);
+            printf("[ChunkElaboration] Alignment time %08.8f s\n\n", alignment_time);
+
+        #endif  
     #endif
-
-
-
-     #ifdef TAKE_THROUGHPUT
-
-      //  double throughput = total_read_length/(pow(10,3)*time_elapsed);
-       // printf("[Main] Throughput: %08.8f reads/s\n", throughput);
-    #endif 
-
-   double seeding_time = time_elapsed - filtering_time - alignment_time;
-    #ifdef VERBOSE
-        printf("[Main] Seeding time %08.8f s\n", seeding_time);
-        printf("[ChunkElaboration] Filtering time %08.8f s\n", filtering_time);
-		printf("[ChunkElaboration] Alignment time %08.8f s\n\n", alignment_time);
-    #endif  
+    
 
 
 

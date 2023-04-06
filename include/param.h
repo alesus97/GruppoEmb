@@ -22,9 +22,8 @@
     #define INDEX_FILE_NAME         "salmonellaEntericaReadIndex.hb"
 
 #define BUILD_GENOME_INDEX      0x1                 // Comment this to disable Genome Index Building
-#define TAKE_TIME               0x1                 // Comment this to disable Time Measuring 
+//#define TAKE_TIME               0x1                 // Comment this to disable Time Measuring 
 #define VERBOSE                 0x1                 // Comment this to disable terminal messages
-#define TAKE_THROUGHPUT         0x1                 // Comment this to disable Throughput Measuring
 
 /*  ######### MULTITHREADING PARAMETERS #########  */
 

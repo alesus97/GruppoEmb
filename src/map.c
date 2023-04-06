@@ -6,11 +6,14 @@
 	extern pthread_mutex_t TF_mutex;
 	
 #endif
+#ifdef TAKE_TIME
+	struct timespec start_filtering, end_filtering, start_alignment, end_alignment;
+	double filtering_time, alignment_time;
+	double temptime;
+	
+#endif
 
-struct timespec start_filtering, end_filtering, start_alignment, end_alignment;
-double filtering_time, alignment_time;
 
-double temptime;
 
 #ifndef MODE_COMPRESSED
 
