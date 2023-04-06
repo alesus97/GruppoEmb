@@ -46,6 +46,7 @@ void MapReadsToGenome(struct seqfile_t *TF, struct seqfile_t *RF, FILE *SAMfile)
 		*/
 
 		getNextRead(RF);
+		
 
 		/*#ifdef VERBOSE
 			printf("[MapReadsToGenome] Mapping read <%010u>\n", RF->seqid);

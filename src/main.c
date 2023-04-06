@@ -12,6 +12,7 @@
 
     extern double filtering_time_vector[THREADSNUM];
     extern double alignment_time_vector[THREADSNUM];
+    extern uint32_t total_reads_vector[THREADSNUM];
 
 #endif
 
@@ -108,7 +109,7 @@ int main(){
         #else
 
         #ifdef TAKE_THROUGHPUT
-            uint32_t x = totalReadLength(&RF);
+            uint32_t total_read_length = totalReadLength(&RF);
         #endif
 
         MapReadsToGenome(&TF, &RF, NULL);
@@ -154,17 +155,27 @@ int main(){
 
         /* Init all required mutexex for the threads to share the Index and the global Read file */
         mutex_group_create();
+        
+       // int[thread_num];
 
-        uint32_t b = ceil(reads_num / thread_num);
-        //uint32_t a = reads_num % (ceil(reads_num / thread_num)/thread_num);
-        /* Launching threads */
-        for(int i = 0; i < thread_num; i++){
+        for (int i = 0; i < reads_num%thread_num; i++) {
+
             thread_ctx[i].id = i;
-            thread_ctx[i].reads_num = ceil(reads_num / thread_num) + ceil((double)(reads_num % b)/thread_num) ;
+            thread_ctx[i].reads_num = reads_num/thread_num+1;
             thread_ctx[i].TF_global = &TF;
             thread_ctx[i].RF_global = &RF;
             if(pthread_create(&(thread_ctx[i].thread_handler), NULL, mapper_thread, &thread_ctx[i]) != 0) {printf("\033[1m\033[31m[Main] Error: Thread number <%d> failed\033[37m\n", i); return -1; }; 
         }
+
+        for (int i = reads_num%thread_num ; i < thread_num  ; i++){
+            thread_ctx[i].id = i;
+            thread_ctx[i].reads_num = reads_num/thread_num;
+            thread_ctx[i].TF_global = &TF;
+            thread_ctx[i].RF_global = &RF;
+            if(pthread_create(&(thread_ctx[i].thread_handler), NULL, mapper_thread, &thread_ctx[i]) != 0) {printf("\033[1m\033[31m[Main] Error: Thread number <%d> failed\033[37m\n", i); return -1; }; 
+        }
+
+
         
         for(int i = 0; i < thread_num; i++){
             if(pthread_join(thread_ctx[i].thread_handler, NULL)!= 0) {printf("\033[1m\033[31m[Main] Error: Thread number <%d> failed\033[37m\n", i); return -1; };
@@ -175,15 +186,21 @@ int main(){
 
         double sum_alignment = 0;
         double sum_filtering = 0;
+        double throughput_per_thread[thread_num];
+
 
         for(uint32_t i=0; i<thread_num; i++){
             sum_alignment += alignment_time_vector[i];
-            sum_filtering += filtering_time_vector[i];     
+            sum_filtering += filtering_time_vector[i];
+            throughput_per_thread[i] = total_reads_vector[i]/(pow(10,3)*time_elapsed);
+            printf("throughput per thread %f \n", throughput_per_thread[i]);
+
         }
 
         filtering_time = sum_filtering/thread_num;
         alignment_time = sum_alignment/thread_num;
 
+        
 
     #endif
 
@@ -192,16 +209,17 @@ int main(){
         time_elapsed = (end.tv_sec - start.tv_sec);
         time_elapsed += (end.tv_nsec - start.tv_nsec) / 1000000000.0;
         #ifdef VERBOSE
-            printf("[Main] Full-Genome Mapping completed in %08.8f s; %08u reads mapped\n\n", time_elapsed, RF.seqid+1 );
+            printf("[Main] Full-Genome Mapping completed in %08.8f s; %08u reads mapped\n\n", time_elapsed, RF.seqid/* +1 */ );
         #endif
     #endif
 
 
 
-  /*   #ifdef TAKE_THROUGHPUT
-        double throughput = x/(pow(10,3)*time_elapsed);
-        printf("[Main] Throughput: %08.8f reads/s\n", throughput);
-    #endif */
+     #ifdef TAKE_THROUGHPUT
+
+      //  double throughput = total_read_length/(pow(10,3)*time_elapsed);
+       // printf("[Main] Throughput: %08.8f reads/s\n", throughput);
+    #endif 
 
    double seeding_time = time_elapsed - filtering_time - alignment_time;
     #ifdef VERBOSE

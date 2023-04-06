@@ -15,6 +15,7 @@ pthread_mutex_t RF_mutex;           //Used here to fill the thread file
 
 double filtering_time_vector[THREADSNUM];
 double alignment_time_vector[THREADSNUM];
+uint32_t total_reads_vector[THREADSNUM];
 
 void mutex_group_create(){
     pthread_mutex_init(&TF_mutex, NULL);
@@ -61,11 +62,12 @@ void * mapper_thread(void* in){
 
 
         #ifdef TAKE_THROUGHPUT
-            uint32_t x = totalReadLength(&(thread_ctx->RF_local));
+            uint32_t total_read_length = totalReadLength(&(thread_ctx->RF_local));
+            total_reads_vector[thread_ctx->id] = total_read_length;
         #endif
 
-        printf("[Main][Thread<%03u>][ReadLength <%u>]\n", thread_ctx->id, x);
-
+       // printf("[Main][Thread<%03u>][ReadLength <%u>]\n", thread_ctx->id, total_read_length);
+        
         MapReadsToGenome(thread_ctx->TF_global, &(thread_ctx->RF_local), NULL);
 
         filtering_time_vector[thread_ctx->id] = filtering_time;

@@ -145,13 +145,9 @@ uint32_t totalReadLength(struct seqfile_t * RF){
 	uint32_t total_length = 0;
 
 	while (fgetc(RF->file) != EOF){
+		total_length += RF->seqlen;
         getNextRead(RF);
-        total_length += RF->seqlen;
-		//printf("RF->seqlen %u \n", RF->seqlen);
-
-        if(fgetc(RF->file) == EOF){
-            break;
-        }
+        
 	}
 
 	//Reset read file pointers
