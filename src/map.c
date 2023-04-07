@@ -10,7 +10,10 @@
 	struct timespec start_filtering, end_filtering, start_alignment, end_alignment;
 	double filtering_time, alignment_time;
 	double temptime;
-	
+
+	double filtering_time_vector[THREADSNUM];
+    double alignment_time_vector[THREADSNUM];
+
 #endif
 
 
@@ -21,7 +24,7 @@
 	bp_t chunkT[MAX_GENOME_CHUNK_SIZE]; // Chunk for the Target (i.e. the reference)
 	bp_t temp_chunk[MAX_GENOME_CHUNK_SIZE]; 
 
-void MapReadsToGenome(struct seqfile_t *TF, struct seqfile_t *RF, FILE *SAMfile)
+void MapReadsToGenome(struct seqfile_t *TF, struct seqfile_t *RF, FILE *SAMfile, struct mapper_ctx_t * thread_ctx)
 {
 
 	bp_t *chunkA;
@@ -82,12 +85,16 @@ void MapReadsToGenome(struct seqfile_t *TF, struct seqfile_t *RF, FILE *SAMfile)
 		}
 
 		/*
-			########################################################
+			#######################################################
 			##### 2 - For each read, perform mapping on chunks #####
 			########################################################
 		*/
 
-		MapChunksToGenome(chunkA, chunkB, chunk_num, chunk_size, k, w, &matches, RF, TF);
+		#ifdef MULTITHREADING 
+			MapChunksToGenome(chunkA, chunkB, chunk_num, chunk_size, k, w, &matches, RF, TF,  thread_ctx);
+		#else 
+			MapChunksToGenome(chunkA, chunkB, chunk_num, chunk_size, k, w, &matches, RF, TF,  NULL);
+		#endif
 
 		if (fgetc(RF->file) == EOF)
 			break;
@@ -98,9 +105,15 @@ void MapReadsToGenome(struct seqfile_t *TF, struct seqfile_t *RF, FILE *SAMfile)
 	free(chunkB);
 	cvector_free(matches);
 
+	/* #ifdef TAKE_TIME && MULTITHREADING
+            filtering_time_vector[thread_ctx->id] = thread_ctx->filtering_time;
+			printf("[Main][Thread<%03u>] FILTERING TIME: %08.8f\n", thread_ctx->id, filtering_time_vector[thread_ctx->id]);
+           
+        #endif */
+
 }
 
-void MapChunksToGenome(bp_t *chunkA, bp_t *chunkB, const uint32_t chunk_num, const uint32_t chunk_size, const uint8_t k, const uint8_t w, cvector_vector_type(struct minimatch_t) * matches, struct seqfile_t *RF, struct seqfile_t *TF)
+void MapChunksToGenome(bp_t *chunkA, bp_t *chunkB, const uint32_t chunk_num, const uint32_t chunk_size, const uint8_t k, const uint8_t w, cvector_vector_type(struct minimatch_t) * matches, struct seqfile_t *RF, struct seqfile_t *TF,  struct mapper_ctx_t * thread_ctx)
 {
 
 	uint32_t last_chunk_size = 0;
@@ -151,7 +164,11 @@ void MapChunksToGenome(bp_t *chunkA, bp_t *chunkB, const uint32_t chunk_num, con
 		*/
 
 		// filter matches using the SneakySnake algorithm
-		chunkElaboration(matches, RF, TF);
+		#ifdef MULTITHREADING 
+			chunkElaboration(matches, RF, TF, thread_ctx);
+		#else 
+			chunkElaboration(matches, RF, TF, NULL);
+		#endif
 
 		/*
 			##########################################################
@@ -216,7 +233,7 @@ void strandTPositive(struct seqfile_t *RF, struct seqfile_t *TF, uint32_t chunk_
 }
 
 
-int chunkFilter(struct seqfile_t *RF, struct seqfile_t *TF, uint32_t chunk_num, struct minimatch_t minmatch, uint32_t leftOffsetT, uint32_t last_chunk_size, uint32_t chunk_size){
+int chunkFilter(struct seqfile_t *RF, struct seqfile_t *TF, uint32_t chunk_num, struct minimatch_t minmatch, uint32_t leftOffsetT, uint32_t last_chunk_size, uint32_t chunk_size,  struct mapper_ctx_t * thread_ctx){
 
 		uint32_t accepted = 0;
 
@@ -316,8 +333,12 @@ int chunkFilter(struct seqfile_t *RF, struct seqfile_t *TF, uint32_t chunk_num, 
 						}else{
 							temptime = (end_filtering.tv_nsec - start_filtering.tv_nsec) / 1000000000.0 ;
 						}
-
-						filtering_time += temptime;
+						#ifdef MULTITHREADING
+							thread_ctx->filtering_time += temptime;
+							
+						#else
+							filtering_time += temptime;
+						#endif
 							return 0;
 						}
 				#else
@@ -348,7 +369,7 @@ int chunkFilter(struct seqfile_t *RF, struct seqfile_t *TF, uint32_t chunk_num, 
 /* 	  wavefront_aligner_t* const wf_aligner = wavefront_aligner_new(&attributes);
 	wavefront_aligner_attr_t attributes = wavefront_aligner_attr_default; */
 
-void chunkAlign(struct seqfile_t *RF, struct seqfile_t *TF, uint32_t chunk_num, struct minimatch_t minmatch, uint32_t leftOffsetT, uint32_t last_chunk_size, uint32_t chunk_size, wavefront_aligner_attr_t attributes, wavefront_aligner_t* const wf_aligner){
+void chunkAlign(struct seqfile_t *RF, struct seqfile_t *TF, uint32_t chunk_num, struct minimatch_t minmatch, uint32_t leftOffsetT, uint32_t last_chunk_size, uint32_t chunk_size, wavefront_aligner_attr_t attributes, wavefront_aligner_t* const wf_aligner,struct mapper_ctx_t * thread_ctx){
 
 		 	for(int i=0; i<chunk_num; i++){
 
@@ -433,7 +454,11 @@ void chunkAlign(struct seqfile_t *RF, struct seqfile_t *TF, uint32_t chunk_num, 
 								temptime = (end_alignment.tv_nsec - start_alignment.tv_nsec) / 1000000000.0 ;
 							}
 
-							alignment_time += temptime;
+							#ifdef MULTITHREADING
+								thread_ctx->alignment_time += temptime;	
+							#else
+								alignment_time += temptime;
+							#endif
 						#else
 							wavefront_align(wf_aligner,chunkQ,last_chunk_size,chunkT,last_chunk_size);
 						#endif
@@ -448,7 +473,7 @@ void chunkAlign(struct seqfile_t *RF, struct seqfile_t *TF, uint32_t chunk_num, 
 
 
 
-void chunkElaboration(cvector_vector_type(struct minimatch_t) * matches, struct seqfile_t *RF, struct seqfile_t *TF){
+void chunkElaboration(cvector_vector_type(struct minimatch_t) * matches, struct seqfile_t *RF, struct seqfile_t *TF,  struct mapper_ctx_t * thread_ctx){
 
 	struct minimatch_t minmatch;
 	uint32_t leftOffsetT;
@@ -473,11 +498,16 @@ void chunkElaboration(cvector_vector_type(struct minimatch_t) * matches, struct 
 		chunk_num = (RF->seqlen <= MAX_GENOME_CHUNK_SIZE) ? 1 : ceil(RF->seqlen / (MAX_GENOME_CHUNK_SIZE));
 			
 		minmatch = *(*matches + (cvector_size(*matches) - 1));
-		
-		 if(chunkFilter(RF, TF, chunk_num, minmatch, leftOffsetT, last_chunk_size, chunk_size)){
-			chunkAlign(RF, TF, chunk_num, minmatch, leftOffsetT, last_chunk_size, chunk_size, attributes, wf_aligner);
-		} 
-
+		 
+		 #ifdef MULTITHREADING
+			if(chunkFilter(RF, TF, chunk_num, minmatch, leftOffsetT, last_chunk_size, chunk_size,  thread_ctx)){
+				chunkAlign(RF, TF, chunk_num, minmatch, leftOffsetT, last_chunk_size, chunk_size, attributes, wf_aligner, thread_ctx);
+			} 
+		 #else
+		 	if(chunkFilter(RF, TF, chunk_num, minmatch, leftOffsetT, last_chunk_size, chunk_size,  NULL)){
+				chunkAlign(RF, TF, chunk_num, minmatch, leftOffsetT, last_chunk_size, chunk_size, attributes, wf_aligner, NULL);
+			} 
+		#endif
 		cvector_pop_back(*matches);
 				
 	}

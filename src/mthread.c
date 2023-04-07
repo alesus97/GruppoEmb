@@ -70,10 +70,10 @@ void * mapper_thread(void* in){
 
        // printf("[Main][Thread<%03u>][ReadLength <%u>]\n", thread_ctx->id, total_read_length);
         
-        MapReadsToGenome(thread_ctx->TF_global, &(thread_ctx->RF_local), NULL);
+        MapReadsToGenome(thread_ctx->TF_global, &(thread_ctx->RF_local), NULL, thread_ctx);
         #ifdef TAKE_TIME
-            filtering_time_vector[thread_ctx->id] = filtering_time;
-            alignment_time_vector[thread_ctx->id] = alignment_time;
+            filtering_time_vector[thread_ctx->id] = thread_ctx->filtering_time;
+            alignment_time_vector[thread_ctx->id] = thread_ctx->alignment_time;
         #endif
 
         #ifdef VERBOSE

@@ -95,6 +95,9 @@ struct mapper_ctx_t{
 	pthread_t thread_handler;
 	uint32_t reads_num;
 	uint8_t id;
+	double filtering_time;
+	double alignment_time;
+
 
 	struct timespec start_filtering, end_filtering;
 	struct timespec start_alignment, end_alignment;

@@ -25,7 +25,7 @@
 
     extern double filtering_time, alignment_time;
     double  seeding_time;
-    
+
 #endif
 
 int main(){
@@ -117,7 +117,7 @@ int main(){
             uint32_t total_read_length = totalReadLength(&RF);
         #endif
 
-        MapReadsToGenome(&TF, &RF, NULL);
+        MapReadsToGenome(&TF, &RF, NULL, NULL);
             
         #endif
 
@@ -228,7 +228,7 @@ int main(){
             
             }
 
-            throughput = sum_throughput/thread_num;
+            throughput = sum_throughput;
         #else 
 
             double throughput = total_read_length/(pow(10,3)*time_elapsed);

@@ -22,7 +22,7 @@
     #define INDEX_FILE_NAME         "salmonellaEntericaReadIndex.hb"
 
 #define BUILD_GENOME_INDEX      0x1                 // Comment this to disable Genome Index Building
-//#define TAKE_TIME               0x1                 // Comment this to disable Time Measuring 
+#define TAKE_TIME               0x1                 // Comment this to disable Time Measuring 
 #define VERBOSE                 0x1                 // Comment this to disable terminal messages
 
 /*  ######### MULTITHREADING PARAMETERS #########  */
@@ -32,7 +32,7 @@
 
 /*  ######### TUNING PARAMETERS #########  */
 
-#define MAX_GENOME_CHUNK_SIZE   512//4*1024             // Maximum Chunk Size allowed to store Genome locally
+#define MAX_GENOME_CHUNK_SIZE   2*1024             // Maximum Chunk Size allowed to store Genome locally
 #define MAX_READ_CHUNK_SIZE     512   //!PROBLEMA DIMENSIONE SCHEDA   // Maximum Chunk Size allowed to store Read locally
 #define MAX_HASHBAND_SIZE       64*1024             // Maximum HashBand number of entries
 #define MAX_HASHNODES           32                  // Maximum number of Linked List Nodes per HashBand entry 
